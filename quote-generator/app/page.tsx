@@ -131,18 +131,21 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { quotesData, allCategories } from "@/data/quotes";
 
-// Quote object ka type define karein
+// Quote object ka type d
 interface Quote {
   quote: string;
   author: string;
 }
 
+
 export default function HomePage() {
   const [topic, setTopic] = useState("");
   const [generatedQuotes, setGeneratedQuotes] = useState<Quote[]>([]);
+  const [filteredCategories, setFilteredCategories] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const handleGenerateQuotes = () => {
     if (!topic) {
@@ -158,7 +161,7 @@ export default function HomePage() {
     if (category) {
       setGeneratedQuotes(category.quotes);
     } else {
-      setGeneratedQuotes([{ quote: "Sorry, is topic par koi quotes nahi mile.", author: "System" }]);
+      setGeneratedQuotes([{ quote: "Sorry, No Quotes On This Topic", author: "System" }]);
     }
   };
 
@@ -168,47 +171,116 @@ export default function HomePage() {
     if (category) {
       setGeneratedQuotes(category.quotes);
     }
+    setShowSuggestions(false);
   }
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    setTopic(inputValue);
+    setGeneratedQuotes([]);
+    console.log("Input Value:", inputValue); // DEBUG: Check input
+    if (inputValue.length > 0){
+      const lowerCaseInput = inputValue.toLowerCase();
+      const filtered = allCategories.filter(category => 
+        category.toLowerCase().includes(lowerCaseInput)
+      );
+      setFilteredCategories(filtered);
+      setShowSuggestions(true);
+      console.log("Filtered Categories:", filtered); // See whats being filtered
+    console.log("Show Suggestions:", true); // DEBUG: Confirm showSuggestions is true
+    }
+    else {
+      setFilteredCategories([]);
+      setShowSuggestions(false); // Input empty hone par suggestions hide 
+      console.log("Show Suggestions:", false); // DEBUG: Confirm showSuggestions is false
+    }
+  };
+
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4 sm:p-8">
+   <div className="app-background min-h-screen flex flex-col items-center p-4 sm:p-8">
+    <main className="app-background flex flex-col items-center justify-center min-h-screen  text-white p-4 sm:p-8">
       <div className="w-full max-w-2xl">
-        <Card className="bg-slate-800 border-slate-700 shadow-lg shadow-cyan-500/10">
+        <Card className="bg-white/20 backdrop-blur-md border-white/20 shadow-lg shadow-cyan-500/10">
+        {/* <Card className="bg-slate-800 border-slate-700 shadow-lg shadow-cyan-500/10"> */}
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl sm:text-4xl font-bold text-cyan-400">
-              AI Quote Generator Pro
+            <CardTitle className="text-3xl sm:text-4xl font-bold text-cyan-300">
+                Quote Generator Pro
             </CardTitle>
-            <CardDescription className="text-slate-400 pt-2">
-              Koi bhi topic likhein jaise 'motivation', 'wisdom', ya 'programming' aur quotes hasil karein.
+            <CardDescription className="pt-4 text-white/100 font-bold">
+              Enter Any Topic And Get Quotes....
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex flex-col sm:flex-row gap-4 mb-6">
               <Input
                 type="text"
                 placeholder="Enter a topic..."
                 value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:ring-cyan-500"
+                
+                onChange={handleInputChange}
+                onFocus={() => setShowSuggestions(true)} // Focus par suggestions dikhayein
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 100)} //
+                
+                className="
+                    bg-white/5         /* Transparent white background */
+                    border-white/100     /* Subtle border */
+                    text-white/100
+                    font-bold
+                    placeholder:text-white-180 
+                    placeholder:font-bold           /* Lighter placeholder */
+                    focus:ring-cyan-400 focus:ring-offset-0 focus:border-cyan-400     /* Focus styles */
+                    rounded-lg          /* Input field ko bhi rounded karein */
+                    pr-10             /* Right padding for a potential clear button if added later */
+                  "
               />
-              <Button onClick={handleGenerateQuotes} className="bg-cyan-500 hover:bg-cyan-600 text-slate-900 font-bold">
-                Generate Quotes
-              </Button>
-            </div>
 
-            <div className="flex flex-wrap justify-center gap-2 mb-8">
-              <span className="text-slate-300 mr-2">Ya select karein:</span>
-              {allCategories.map(category => (
-                <Badge 
-                    key={category} 
-                    onClick={() => handleCategoryClick(category)}
-                    className="cursor-pointer bg-slate-700 hover:bg-slate-600 text-slate-200"
+              <Button 
+                  onClick={handleGenerateQuotes} 
+                  className="
+                    bg-cyan-600/60 /* Transparent cyan background */
+                    hover:bg-cyan-500/40 /* Hover effect */
+                    text-white/100 /* Button text color */
+                    font-bold
+                    border border-cyan-400/50 /* Subtle border */
+                    shadow-md shadow-cyan-500/20 /* Subtle shadow/glow */
+                    rounded-lg /* Button ko bhi rounded karein */
+                    transition-all duration-300 /* Smooth transition on hover */
+                  "
                 >
-                  {category}
-                </Badge>
-              ))}
-            </div>
+                  Generate Quotes
+              </Button>
+                        
+              {/* Autocomplete Suggestions */}
+              {showSuggestions && filteredCategories.length > 0 && (
+                <div 
+                  className="
+                    absolute top-full left-0 right-0 z-20 
+                    bg-white/15 backdrop-blur-sm text-white/100 font-bold
+                    border border-white/10 rounded-lg 
+                    mt-2 overflow-hidden
+                  "
+                >
+                  {filteredCategories.map((cat) => (
+                    <div 
+                      key={cat} 
+                      onClick={() => handleCategoryClick(cat)}
+                      className="
+                        px-4 py-2 cursor-pointer 
+                        hover:bg-white/25 text-slate-100
+                        transition-colors duration-200
+                      "
+                    >
+                      {cat}
+                    </div>
+                  ))}
+                </div>
+              )}
+                
+              </div>
+         
+
             
+
             <div className="grid gap-6">
                 {generatedQuotes.map((q, index) => (
                     <Card key={index} className="bg-slate-900 border-slate-700 transform transition-transform hover:scale-105">
@@ -222,9 +294,12 @@ export default function HomePage() {
           </CardContent>
         </Card>
       </div>
-      <footer className="text-center mt-8 text-slate-500">
+      </main>
+    
+      <footer className="text-center mt-8 text-white/100">
         <p>Built with ❤️ using Next.js 15 & ShadCN UI at Nexium.</p>
       </footer>
-    </main>
+      </div>
+      
   );
 }
